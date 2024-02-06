@@ -67,10 +67,10 @@ void RTC_Init(void) {
 	// Configure the Date 
 	/* Note: __LL_RTC_CONVERT_BIN2BCD helper macro can be used if user wants to */
 	/*       provide directly the decimal value:                                */
-	RTC_Set_Calendar_Date(RTC_WEEKDAY_WEDNESDAY, 0x01, RTC_MONTH_JANUARY, 0x20); /* [TODO] These values are stubs - fill in current date */
+	RTC_Set_Calendar_Date(RTC_WEEKDAY_WEDNESDAY, 0x1F, RTC_MONTH_JANUARY, 0x18); /* [TODO] These values are stubs - fill in current date */
 	
 	// Configure the Time 
-	RTC_Set_Time(RTC_TR_PM, 0x07, 0x00, 0x00); /* [TODO] These values are stubs - fill in current time */
+	RTC_Set_Time(RTC_TR_PM, 0x0B, 0x06, 0x00); /* [TODO] These values are stubs - fill in current time I wrote in 7:30PM*/ 
   
 	// Exit of initialization mode 
 	RTC->ISR &= ~RTC_ISR_INIT;
@@ -102,11 +102,43 @@ void RTC_Init(void) {
 #define RTC_POSITION_DR_WDU   (uint32_t)POSITION_VAL(RTC_DR_WDU)
 
 void RTC_Set_Calendar_Date(uint32_t WeekDay, uint32_t Day, uint32_t Month, uint32_t Year) {
+	//En Write?
 	// [TODO] Write the date values in the correct place within the RTC Date Register
+	uint32_t mask = RTC->DR;
+	mask &= ~(RTC_DR_YT | RTC_DR_YU | RTC_DR_WDU | RTC_DR_MT | RTC_DR_MU | RTC_DR_DT | RTC_DR_DU);
+	
+	//Setting the year
+	mask |= Year/16<<RTC_POSITION_DR_YT;
+	mask |= Year%16<<RTC_POSITION_DR_YU;
+	//Setting the month
+	mask |= Month/16<<RTC_POSITION_DR_MT;
+	mask |= Month%16<<RTC_POSITION_DR_MU;
+	//Setting the Day
+	mask |= Day/16<<RTC_POSITION_DR_DT;
+	mask |= Day%16<<RTC_POSITION_DR_DU;
+	//Setting Weekday
+	mask |= WeekDay%16<<RTC_POSITION_DR_WDU;
 }
 
 void RTC_Set_Time(uint32_t Format12_24, uint32_t Hour, uint32_t Minute, uint32_t Second) {
-	// [TODO] Write the time values in the correct place within the RTC Time Register
+	//Set
+	uint32_t mask = RTC->TR;
+	mask &= ~(RTC_TR_SU | RTC_TR_ST | RTC_TR_MNU | RTC_TR_MNT | RTC_TR_HU | RTC_TR_HT | RTC_TR_PM);
+	//Setting AM/PM
+	mask |= Format12_24<<22;
+	//Setting Seconds
+	mask |= Second/16<<RTC_POSITION_TR_ST;
+	mask |= Second%16<<RTC_POSITION_TR_SU;
+	//Setting Minutes
+	mask |= Minute/16<<RTC_POSITION_TR_MT;
+	mask |= Minute%16<<RTC_POSITION_TR_MU;
+	//Setting Hours
+	mask |= Hour/16<<RTC_POSITION_TR_HT;
+	mask |= Hour/16<<RTC_POSITION_TR_HU;
+
+	
+	
+
 }
 
 void RTC_Clock_Init(void) {
@@ -147,46 +179,63 @@ void RTC_Clock_Init(void) {
 }
 
 void RTC_Disable_Write_Protection(void) {
-	// [TODO]
+	// [.TODO] DONE
+	RTC->WPR = 0xCA;
+	RTC->WPR = 0x53;
 }
 	
 void RTC_Enable_Write_Protection(void) {
-	// [TODO]
+	
+	// [TODO] DONE
+	RTC->WPR = 0x11;
 }
 
 uint32_t RTC_TIME_GetHour(void) {
-	// [TODO]
-	return 0;
+	uint32_t hour = (RTC->TR << 20)*10+(RTC->TR<<16);
+	
+	return hour;
 }
 
 uint32_t RTC_TIME_GetMinute(void) {
 	// [TODO]
-	return 0;
+	uint32_t min = (RTC->TR << 12)*10+(RTC->TR<<8);
+	
+	return min;
 }
 
 uint32_t RTC_TIME_GetSecond(void) {
 	// [TODO]
-	return 0;
+	uint32_t sec = (RTC->TR << 4)*10+(RTC->TR);
+	
+	return sec;
 }
 
 uint32_t RTC_DATE_GetMonth(void) {
 	// [TODO]
-	return 0;
+	uint32_t mnth = (RTC->DR << 12)*10+(RTC->DR<<8);
+	
+	return mnth;
 }
 
 uint32_t RTC_DATE_GetDay(void) {
 	// [TODO]
-	return 0;
+	uint32_t day = (RTC->DR << 4)*10+(RTC->DR);
+	
+	return day;
 }
 
 uint32_t RTC_DATE_GetYear(void) {
 	// [TODO]
-	return 0;
+	uint32_t yr = (RTC->DR << 20)*10+(RTC->DR<<16);
+	
+	return yr;
 }
 
 uint32_t RTC_DATE_GetWeekDay(void) {
 	// [TODO]
-	return 0;
+  uint32_t wday = RTC->DR << 13;
+	
+	return wday;
 }
 
 void Get_RTC_Calendar(char * strTime, char * strDate) {
@@ -202,3 +251,4 @@ void Get_RTC_Calendar(char * strTime, char * strDate) {
 		__RTC_CONVERT_BCD2BIN(RTC_DATE_GetDay()), 
 		2000 + __RTC_CONVERT_BCD2BIN(RTC_DATE_GetYear()));
 }
+
