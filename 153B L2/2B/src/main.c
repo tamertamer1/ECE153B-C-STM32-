@@ -13,6 +13,8 @@
 
 int main() {
 	// Initialization
+		
+		
 	System_Clock_Init();
 	LED_Init();
 	EXTI_Init();
